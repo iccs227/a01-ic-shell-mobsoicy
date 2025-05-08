@@ -48,6 +48,5 @@ int main() {
             }
             printf("bad command\n");
         }
-        
     }
 }
