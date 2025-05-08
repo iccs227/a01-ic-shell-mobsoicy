@@ -5,6 +5,7 @@
 
 #include "stdio.h"
 #include "string.h"
+#include "stdlib.h"
 
 #define MAX_CMD_BUFFER 255
 
@@ -34,5 +35,18 @@ int main() {
         }
 
         // for exit command
+        if (strncmp(buffer, "exit ", 5)==0) {
+            int exit_code = atoi(buffer+5) & 0xFF;
+            printf("bye\n");
+            exit(exit_code);
+        }
+
+        // for bad comand
+        else {
+            if (strcmp(buffer, "")==0) {
+                continue; // Ignore empty command
+            }
+            printf("bad command\n");
+        }
     }
 }
