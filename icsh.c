@@ -61,12 +61,38 @@ int main(int argc, char *argv[]) {
             exit(exit_code);
         }
 
-        // for bad comand
+        // external code
         else {
             if (strcmp(buffer, "")==0) {
                 continue; // Ignore empty command
             }
-            printf("bad command\n");
+            // printf("bad command\n");
+
+            // parse command and arguments
+            char *args[MAX_CMD_BUFFER];
+            int i = 0;
+            args[i] = strtok(buffer, " ");
+            while (args[i] != NULL) {
+                i++;
+                args[i] = strtok(NULL, " ");
+            }
+
+            // fork a child process
+            pid_t pid = fork();
+            if (pid < 0) {
+                perror("Fork failed");
+                continue;
+            }
+            
+            if (pid == 0) { // child process
+                execvp(args[0], args);
+                perror("Command execution failed");
+                exit(1);
+            } 
+            else { // parent process
+                int status;
+                waitpid(pid, &status, 0);
+            }
         }
     }
 }
