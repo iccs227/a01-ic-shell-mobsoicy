@@ -6,8 +6,26 @@
 #include "stdio.h"
 #include "string.h"
 #include "stdlib.h"
+#include "signal.h"
+#include "unistd.h"
+#include <sys/wait.h>
 
 #define MAX_CMD_BUFFER 255
+
+pid_t fgpid = 0;
+int last_status = 0;
+
+void sigint_handler(int signo) {
+    if (fgpid > 0) {
+        kill(fgpid, SIGINT);
+    }
+}
+
+void sigtstp_handler(int signo) {
+    if (fgpid > 0) {
+        kill(fgpid, SIGTSTP);
+    }
+}
 
 int main(int argc, char *argv[]) {
     char buffer[MAX_CMD_BUFFER];
@@ -22,21 +40,25 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    signal(SIGINT, sigint_handler);
+    signal(SIGTSTP, sigtstp_handler);
+
     printf("Starting IC shell\n");
     while (1) {
         if (script_file) {
             if (fgets(buffer, MAX_CMD_BUFFER, script_file) == NULL) {
                 fclose(script_file);
+                script_file = NULL;
                 continue;
             }
-
         }
         else {
             printf("icsh $ ");
             fgets(buffer, MAX_CMD_BUFFER, stdin);
         }
 
-        buffer[strcspn(buffer, "\n")] = 0; // Remove newline character
+        buffer[strcspn(buffer, "\r\n")] = 0; // Remove newline character
+
         // for !! command
         if (strcmp(buffer, "!!")==0) {
             if (strlen(last_command)==0) {
@@ -49,8 +71,13 @@ int main(int argc, char *argv[]) {
             strcpy(last_command, buffer); // Store the last command
         }
 
+        // for echo $? command
+        if (strcmp(buffer, "echo $?") == 0) {
+            printf("%d\n", last_status);
+        }
+
         // for echo command
-        if (strncmp(buffer, "echo ", 5)==0) {
+        else if (strncmp(buffer, "echo ", 5)==0) {
             printf("%s\n", buffer+5);
         }
 
@@ -85,13 +112,27 @@ int main(int argc, char *argv[]) {
             }
             
             if (pid == 0) { // child process
+                signal(SIGINT, SIG_DFL);
+                signal(SIGTSTP, SIG_DFL);
                 execvp(args[0], args);
                 perror("Command execution failed");
                 exit(1);
             } 
             else { // parent process
                 int status;
-                waitpid(pid, &status, 0);
+                fgpid = pid;
+                waitpid(pid, &status, WUNTRACED);
+                fgpid = 0;
+                if (WIFEXITED(status)) {
+                    last_status = WEXITSTATUS(status);
+                } 
+                else if (WIFSIGNALED(status)) {
+                    last_status = WTERMSIG(status);
+                    printf("\n");
+                } 
+                else if (WIFSTOPPED(status)) {
+                    printf("\n");
+                }
             }
         }
     }
