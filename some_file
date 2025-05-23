@@ -1,0 +1,10 @@
+total 28
+-rwxrwxrwx 1 root12 root12   147 May 21 20:58 Makefile
+-rwxrwxrwx 1 root12 root12   274 May 21 20:58 README.md
+-rwxrwxrwx 1 root12 root12  2111 May 23 23:16 execute.c
+drwxrwxrwx 1 root12 root12  4096 May 21 23:24 headers
+-rwxrwxrwx 1 root12 root12 17200 May 23 23:17 icsh
+-rwxrwxrwx 1 root12 root12  2186 May 23 14:43 icsh.c
+-rwxrwxrwx 1 root12 root12   267 May 23 14:57 signals.c
+-rwxrwxrwx 1 root12 root12     0 May 23 23:18 some_file
+-rwxrwxrwx 1 root12 root12    36 May 21 20:58 test.sh

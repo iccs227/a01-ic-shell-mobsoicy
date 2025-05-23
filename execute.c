@@ -4,10 +4,28 @@
 #include "stdlib.h"
 #include "unistd.h"
 #include <sys/wait.h>
+#include "fcntl.h"
 
 void execute(char *buffer) {
     if (strcmp(buffer, "")==0) {
         return; // Ignore empty command
+    }
+
+    // parse redirection
+    char *in_file = NULL;
+    char *out_file = NULL;
+    char *in_ptr = strchr(buffer, '<');
+    char *out_ptr = strchr(buffer, '>');
+
+    if (in_ptr) {
+        *in_ptr = '\0'; // Split the command
+        in_ptr++;
+        in_file = strtok(in_ptr, " \t");
+    }
+    else if (out_ptr) {
+        *out_ptr = '\0'; // Split the command
+        out_ptr++;
+        out_file = strtok(out_ptr, " \t");
     }
 
     char *args[MAX_CMD_BUFFER];
@@ -26,6 +44,21 @@ void execute(char *buffer) {
     }
     
     if (pid == 0) { // child process
+        if (in_file) {
+            int fd = open(in_file, O_RDONLY);
+            if (fd < 0) {
+                perror("Input file does not exist");
+                exit(1);
+            }
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        }
+        else if (out_file) {
+            int fd = open(out_file, O_WRONLY | O_CREAT, 0644);
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+        }
+
         signal(SIGINT, SIG_DFL);
         signal(SIGTSTP, SIG_DFL);
         execvp(args[0], args);
