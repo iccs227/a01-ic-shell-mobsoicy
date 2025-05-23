@@ -4,28 +4,16 @@
  */
 
 #include "stdio.h"
+#include "headers/icsh.h"
+#include "headers/signals.h"
+#include "headers/execute.h"
 #include "string.h"
 #include "stdlib.h"
-#include "signal.h"
 #include "unistd.h"
 #include <sys/wait.h>
 
-#define MAX_CMD_BUFFER 255
-
 pid_t fgpid = 0;
 int last_status = 0;
-
-void sigint_handler(int signo) {
-    if (fgpid > 0) {
-        kill(fgpid, SIGINT);
-    }
-}
-
-void sigtstp_handler(int signo) {
-    if (fgpid > 0) {
-        kill(fgpid, SIGTSTP);
-    }
-}
 
 int main(int argc, char *argv[]) {
     char buffer[MAX_CMD_BUFFER];
@@ -90,50 +78,7 @@ int main(int argc, char *argv[]) {
 
         // external code
         else {
-            if (strcmp(buffer, "")==0) {
-                continue; // Ignore empty command
-            }
-            // printf("bad command\n");
-
-            // parse command and arguments
-            char *args[MAX_CMD_BUFFER];
-            int i = 0;
-            args[i] = strtok(buffer, " ");
-            while (args[i] != NULL) {
-                i++;
-                args[i] = strtok(NULL, " ");
-            }
-
-            // fork a child process
-            pid_t pid = fork();
-            if (pid < 0) {
-                perror("Fork failed");
-                continue;
-            }
-            
-            if (pid == 0) { // child process
-                signal(SIGINT, SIG_DFL);
-                signal(SIGTSTP, SIG_DFL);
-                execvp(args[0], args);
-                perror("Command execution failed");
-                exit(1);
-            } 
-            else { // parent process
-                int status;
-                fgpid = pid;
-                waitpid(pid, &status, WUNTRACED);
-                fgpid = 0;
-                if (WIFEXITED(status)) {
-                    last_status = WEXITSTATUS(status);
-                } 
-                else if (WIFSIGNALED(status)) {
-                    last_status = WTERMSIG(status);
-                    printf("\n");
-                } 
-                else if (WIFSTOPPED(status)) {
-                    printf("\n");
-                }
-            }
+            execute(buffer);
         }
     }
 }
