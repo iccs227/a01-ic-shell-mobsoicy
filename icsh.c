@@ -11,6 +11,7 @@
 #include "stdlib.h"
 #include "unistd.h"
 #include <sys/wait.h>
+#include "headers/buildin.h"
 
 pid_t fgpid = 0;
 int last_status = 0;
@@ -48,52 +49,18 @@ int main(int argc, char *argv[]) {
         buffer[strcspn(buffer, "\r\n")] = 0; // Remove newline character
         char expanded[MAX_CMD_BUFFER * 2] = "";
 
-        // for !! command
-        if (strstr(buffer, "!!")) {
-            if (strlen(last_command)==0) {
-                continue;
-            }
-            printf("%s\n", last_command);
-            if (strchr(buffer, '>')) {
-                char *redir = strchr(buffer, '>');
-                strcpy(expanded, last_command);
-                strcat(expanded, " ");
-                strcat(expanded, redir);
-                strcpy(last_command, expanded);
-                execute(expanded);
-                continue; // Skip to next iteration if redirection is present
-            }
-            strcpy(buffer, last_command); // Copy last command to buffer
+        // handle buildin commands
+        int build_in = buildin_handler(buffer, &last_status, last_command, expanded);
+        if (build_in == 1) {
+            strcpy(last_command, buffer);
+            continue;
         }
-        else {
-            strcpy(last_command, buffer); // Store the last command
+        else if (build_in == 2) {
+            strcpy(last_command, expanded);
+            execute(expanded);
+            continue;
         }
-
-        if (strchr(buffer, '>')) {
-            execute(buffer);
-            continue; // Skip to next iteration if redirection is present
-        }
-
-        // for echo $? command
-        if (strcmp(buffer, "echo $?") == 0) {
-            printf("%d\n", last_status);
-        }
-
-        // for echo command
-        else if (strncmp(buffer, "echo ", 5)==0) {
-            printf("%s\n", buffer+5);
-        }
-
-        // for exit command
-        else if (strncmp(buffer, "exit ", 5)==0) {
-            int exit_code = atoi(buffer+5) & 0xFF;
-            printf("bye\n");
-            exit(exit_code);
-        }
-
-        // external code
-        else {
-            execute(buffer);
-        }
+        strcpy(last_command, buffer);
+        execute(buffer); // for external commands
     }
 }
