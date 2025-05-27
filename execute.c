@@ -22,7 +22,7 @@ void execute(char *buffer) {
         in_ptr++;
         in_file = strtok(in_ptr, " \t");
     }
-    else if (out_ptr) {
+    if (out_ptr) {
         *out_ptr = '\0'; // Split the command
         out_ptr++;
         out_file = strtok(out_ptr, " \t");
@@ -54,7 +54,7 @@ void execute(char *buffer) {
             close(fd);
         }
         else if (out_file) {
-            int fd = open(out_file, O_WRONLY | O_CREAT, 0644);
+            int fd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             dup2(fd, STDOUT_FILENO);
             close(fd);
         }

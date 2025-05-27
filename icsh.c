@@ -46,17 +46,32 @@ int main(int argc, char *argv[]) {
         }
 
         buffer[strcspn(buffer, "\r\n")] = 0; // Remove newline character
+        char expanded[MAX_CMD_BUFFER * 2] = "";
 
         // for !! command
-        if (strcmp(buffer, "!!")==0) {
+        if (strstr(buffer, "!!")) {
             if (strlen(last_command)==0) {
                 continue;
             }
             printf("%s\n", last_command);
+            if (strchr(buffer, '>')) {
+                char *redir = strchr(buffer, '>');
+                strcpy(expanded, last_command);
+                strcat(expanded, " ");
+                strcat(expanded, redir);
+                strcpy(last_command, expanded);
+                execute(expanded);
+                continue; // Skip to next iteration if redirection is present
+            }
             strcpy(buffer, last_command); // Copy last command to buffer
         }
         else {
             strcpy(last_command, buffer); // Store the last command
+        }
+
+        if (strchr(buffer, '>')) {
+            execute(buffer);
+            continue; // Skip to next iteration if redirection is present
         }
 
         // for echo $? command
