@@ -1,1 +1,1 @@
-void execute(char *buffer);
+void execute(char *buffer, int is_background);

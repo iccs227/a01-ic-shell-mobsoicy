@@ -5,11 +5,16 @@
 #include "unistd.h"
 #include <sys/wait.h>
 #include "fcntl.h"
+#include "headers/buildin.h"
 
-void execute(char *buffer) {
+void execute(char *buffer, int is_background) {
     if (strcmp(buffer, "")==0) {
         return; // Ignore empty command
     }
+
+    char original_buffer[MAX_CMD_BUFFER];
+    strncpy(original_buffer, buffer, MAX_CMD_BUFFER-1);
+    original_buffer[MAX_CMD_BUFFER-1] = '\0';
 
     // parse redirection
     char *in_file = NULL;
@@ -53,7 +58,7 @@ void execute(char *buffer) {
             dup2(fd, STDIN_FILENO);
             close(fd);
         }
-        else if (out_file) {
+        if (out_file) {
             int fd = open(out_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             dup2(fd, STDOUT_FILENO);
             close(fd);
@@ -61,24 +66,32 @@ void execute(char *buffer) {
 
         signal(SIGINT, SIG_DFL);
         signal(SIGTSTP, SIG_DFL);
+        signal(SIGCHLD, SIG_DFL);
+        setpgid(0, 0);
+
         execvp(args[0], args);
         perror("Command execution failed");
         exit(1);
     } 
     else { // parent process
-        int status;
-        fgpid = pid;
-        waitpid(pid, &status, WUNTRACED);
-        fgpid = 0;
-        if (WIFEXITED(status)) {
-            last_status = WEXITSTATUS(status);
-        } 
-        else if (WIFSIGNALED(status)) {
-            last_status = WTERMSIG(status);
-            printf("\n");
-        } 
-        else if (WIFSTOPPED(status)) {
-            printf("\n");
+        if (is_background) {
+            job_handler(ADD_JOB, pid, original_buffer, "Running");
+            printf("[%d] %d\n", next_job_id-1, pid);
+        }
+        else {
+            fgpid = pid;
+            int status;
+            waitpid(pid, &status, WUNTRACED);
+            fgpid = 0;
+            if (WIFEXITED(status)) {
+                last_status = WEXITSTATUS(status);
+            }
+            else if (WIFSIGNALED(status)) {
+                last_status = WTERMSIG(status);
+            }
+            else if (WIFSTOPPED(status)) {
+                last_status = WSTOPSIG(status);
+            }
         }
     }
 }
