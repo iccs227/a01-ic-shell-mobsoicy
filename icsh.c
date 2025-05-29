@@ -15,10 +15,13 @@
 
 pid_t fgpid = 0;
 int last_status = 0;
+Job jobs[MAX_JOBS];
+int job_count;
+int next_job_id = 1;
+char last_command[MAX_CMD_BUFFER] = "";
 
 int main(int argc, char *argv[]) {
     char buffer[MAX_CMD_BUFFER];
-    char last_command[MAX_CMD_BUFFER] = ""; // To store the last command
     FILE *script_file = NULL;
 
     if (argc == 2) {
@@ -31,9 +34,18 @@ int main(int argc, char *argv[]) {
 
     signal(SIGINT, sigint_handler);
     signal(SIGTSTP, sigtstp_handler);
+    signal(SIGCHLD, sigchld_handler);
 
     printf("Starting IC shell\n");
     while (1) {
+        for (int i=0; i<job_count; i++) {
+            if (strcmp(jobs[i].status, "Done")==0) {
+                printf("[%d]  %s                 %s\n", jobs[i].job_id, jobs[i].status, jobs[i].command);
+                job_handler(REMOVE_JOB, jobs[i].pid, NULL, NULL);
+                i--;
+            }
+        }
+
         if (script_file) {
             if (fgets(buffer, MAX_CMD_BUFFER, script_file) == NULL) {
                 fclose(script_file);
@@ -57,10 +69,10 @@ int main(int argc, char *argv[]) {
         }
         else if (build_in == 2) {
             strcpy(last_command, expanded);
-            execute(expanded);
+            execute(expanded, 0);
             continue;
         }
         strcpy(last_command, buffer);
-        execute(buffer); // for external commands
+        execute(buffer, 0); // for external commands
     }
 }
