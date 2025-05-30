@@ -87,10 +87,10 @@ void execute(char *buffer, int is_background) {
                 last_status = WEXITSTATUS(status);
             }
             else if (WIFSIGNALED(status)) {
-                last_status = WTERMSIG(status);
+                last_status = WTERMSIG(status) + 128;
             }
             else if (WIFSTOPPED(status)) {
-                last_status = WSTOPSIG(status);
+                last_status = WSTOPSIG(status) + 128;
             }
         }
     }

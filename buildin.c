@@ -9,6 +9,7 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
     /// for !! command
     if (strstr(buffer, "!!")) {
         if (strlen(last_command)==0) {
+            *last_status = 0;
             return 1; // 1 for buildin commands
         }
         printf("%s\n", last_command);
@@ -18,9 +19,11 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
             strcpy(expanded, last_command);
             strcat(expanded, " ");
             strcat(expanded, redir);
+            *last_status = 0;
             return 2; // 2 for commands with redirection
         }
         strcpy(buffer, last_command); // Copy last command to buffer
+        *last_status = 0;
     }
 
     // for jobs command
@@ -33,6 +36,7 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
             job_handler(LIST_JOBS, 0, NULL, NULL); // List all jobs
             return 1; // 1 for buildin commands
         }
+        *last_status = 0;
     }
 
     if (strncmp(buffer, "fg %", 4) == 0) {
@@ -62,10 +66,12 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
                 else if (WIFSTOPPED(status)) {
                     job_handler(UPDATE_JOB, jobs[i].pid, NULL, "Stopped");
                 }
+                *last_status = 0;
                 return 1;
             }
         }
         printf("job not found\n");
+        *last_status = 0;
         return 1;
     }
 
@@ -79,16 +85,19 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
                     job_handler(UPDATE_JOB, jobs[i].pid, NULL, "Running");
                     printf("[%d] %s &\n", jobs[i].job_id, jobs[i].command);
                 }
+                *last_status = 0;
                 return 1;
             }
         }
         printf("job not found\n");
+        *last_status = 0;
         return 1;
     }
 
     // for echo $? command
     if (strcmp(buffer, "echo $?") == 0) {
         printf("%d\n", *last_status);
+        *last_status = 0;
         return 1;
     }
 
@@ -97,9 +106,11 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
         char *redir = strchr(buffer, '>');
         if (redir) {
             strcpy(expanded, buffer);
+            *last_status = 0;
             return 2;
         }
         printf("%s\n", buffer+5);
+        *last_status = 0;
         return 1;
     }
 
@@ -114,6 +125,7 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
         char *symbol = strchr(buffer, '&');
         *symbol = '\0';
         execute(buffer, 1);
+        *last_status = 0;
         return 1;
     }
 
