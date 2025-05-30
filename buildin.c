@@ -5,6 +5,7 @@
 #include "headers/buildin.h"
 #include "headers/execute.h"
 #include "headers/animated.h"
+#include "headers/wordle.h"
 
 int buildin_handler(char *buffer, int *last_status, char *last_command, char *expanded) {
     /// for !! command
@@ -126,6 +127,12 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
         char *symbol = strchr(buffer, '&');
         *symbol = '\0';
         execute(buffer, 1);
+        *last_status = 0;
+        return 1;
+    }
+
+    if (strncmp(buffer, "wordle", 6)==0) {
+        wordle();
         *last_status = 0;
         return 1;
     }

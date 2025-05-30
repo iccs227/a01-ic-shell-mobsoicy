@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -g 
 BINARY=icsh
-SRCS= icsh.c signals.c execute.c buildin.c animated.c
+SRCS= icsh.c signals.c execute.c buildin.c animated.c wordle.c
 
 all: icsh
 
