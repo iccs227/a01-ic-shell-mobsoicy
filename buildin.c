@@ -4,6 +4,7 @@
 #include "headers/icsh.h"
 #include "headers/buildin.h"
 #include "headers/execute.h"
+#include "headers/animated.h"
 
 int buildin_handler(char *buffer, int *last_status, char *last_command, char *expanded) {
     /// for !! command
@@ -117,7 +118,7 @@ int buildin_handler(char *buffer, int *last_status, char *last_command, char *ex
     // for exit command
     else if (strncmp(buffer, "exit ", 5)==0) {
         int exit_code = atoi(buffer+5) & 0xFF;
-        printf("bye\n");
+        print_animated_end();
         exit(exit_code);
     }
 

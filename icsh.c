@@ -12,6 +12,7 @@
 #include "unistd.h"
 #include <sys/wait.h>
 #include "headers/buildin.h"
+#include "headers/animated.h"
 
 pid_t fgpid = 0;
 int last_status = 0;
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
     signal(SIGTSTP, sigtstp_handler);
     signal(SIGCHLD, sigchld_handler);
 
-    printf("Starting IC shell\n");
+    print_animated_start();
     while (1) {
         for (int i=0; i<job_count; i++) {
             if (strcmp(jobs[i].status, "Done")==0) {
